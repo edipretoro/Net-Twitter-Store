@@ -2,10 +2,11 @@ package Net::Twitter::Store;
 
 use warnings;
 use strict;
+use Net::Twitter::Store::Schema;
 
 =head1 NAME
 
-Net::Twitter::Store - The great new Net::Twitter::Store!
+Net::Twitter::Store - Store your valuable tweets
 
 =head1 VERSION
 
@@ -15,37 +16,75 @@ Version 0.01
 
 our $VERSION = '0.01';
 
-
 =head1 SYNOPSIS
-
-Quick summary of what the module does.
-
-Perhaps a little code snippet.
 
     use Net::Twitter::Store;
 
-    my $foo = Net::Twitter::Store->new();
-    ...
+    my $cage = Net::Twitter::Store->new(
+      dsn => 'dbi:SQLite:my_tweets.sqlite', # get a valid dsn
+      deploy => 1, # ask Net::Twitter::Store to deploy the schema in the database
+    );
 
-=head1 EXPORT
-
-A list of functions that can be exported.  You can delete this section
-if you don't export anything, such as for a purely object-oriented module.
+    $cage->store( $tweet );
 
 =head1 FUNCTIONS
 
-=head2 function1
+=head2 new
 
 =cut
 
-sub function1 {
+sub new {
+    my ( $class, %args ) = @_;
+
+    my $self   = {};
+    my $schema = Net::Twitter::Store::Schema->connect( $args{dsn} );
+    $schema->deploy() if $args{deploy};
+    $self->{schema} = $schema;
+    bless $self, $class;
+    return $self;
 }
 
-=head2 function2
+=head2 store
 
 =cut
 
-sub function2 {
+sub store {
+    my ( $self, $tweet ) = @_;
+
+    eval {
+        $self->{schema}->txn_do(
+            sub {
+                my $saved_tweet =
+                  $self->{schema}->resultset('Document')
+                  ->find_or_create(
+                    { type => 'tweet', 'name' => $tweet->{id} } );
+                $saved_tweet->insert;
+                
+                foreach my $key ( keys %{$tweet} ) {
+                    next if $key eq 'id';
+                    if ($tweet->{$key}) {
+                        my $prop =
+                            $self->{schema}->resultset('Property')->find_or_create(
+                                {
+                                    'property'    => $key,
+                                    'value'       => $tweet->{$key},
+                                    'document_id' => $saved_tweet->id,
+                                }
+                            );
+                        $prop->insert;
+                    }
+                }
+            }
+        );
+    };
+
+    if ($@) {
+        # i've got a problem
+    }
+    else {
+        # okido
+    }
+
 }
 
 =head1 AUTHOR
@@ -104,4 +143,4 @@ under the same terms as Perl itself.
 
 =cut
 
-1; # End of Net::Twitter::Store
+1;    # End of Net::Twitter::Store
