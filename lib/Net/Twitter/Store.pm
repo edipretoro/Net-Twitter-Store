@@ -59,7 +59,7 @@ sub store {
                   ->find_or_create(
                     { type => 'tweet', 'name' => $tweet->{id} } );
                 $saved_tweet->insert;
-                
+
                 foreach my $key ( keys %{$tweet} ) {
                     next if $key eq 'id';
                     if ($tweet->{$key}) {
