@@ -25,13 +25,12 @@ __PACKAGE__->add_columns(
         'size'              => '255'
     },
     'value' => {
-        'data_type'         => 'varchar',
+        'data_type'         => 'text',
         'is_auto_increment' => 0,
         'default_value'     => undef,
         'is_foreign_key'    => 0,
         'name'              => 'value',
         'is_nullable'       => 0,
-        'size'              => '255'
     },
     'document_id' => {
         'data_type'         => 'bigint',
