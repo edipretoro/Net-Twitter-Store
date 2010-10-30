@@ -15,15 +15,6 @@ __PACKAGE__->add_columns(
         'is_nullable'       => 0,
         'size'              => '20'
     },
-    'name' => {
-        'data_type'         => 'varchar',
-        'is_auto_increment' => 0,
-        'default_value'     => undef,
-        'is_foreign_key'    => 0,
-        'name'              => 'name',
-        'is_nullable'       => 0,
-        'size'              => '255'
-    },
     'type' => {
         'data_type'         => 'varchar',
         'is_auto_increment' => 0,
@@ -35,8 +26,7 @@ __PACKAGE__->add_columns(
     },
 );
 
-__PACKAGE__->set_primary_key('id');
-__PACKAGE__->add_unique_constraint( 'name', ['name'] );
+__PACKAGE__->set_primary_key( 'id', 'type' );
 __PACKAGE__->has_many(
     properties => 'Net::Twitter::Store::Schema::Result::Property',
     'document_id'
