@@ -62,6 +62,9 @@ sub store {
 
                 foreach my $key ( keys %{$tweet} ) {
                     next if $key eq 'id';
+                    if ($key eq 'user') {
+                        $self->_save_user( $tweet->{user} );
+                    }
                     if ($tweet->{$key}) {
                         my $prop =
                             $self->{schema}->resultset('Property')->find_or_create(
@@ -82,6 +85,47 @@ sub store {
         # i've got a problem
     }
     else {
+        # okido
+    }
+}
+
+sub _save_user {
+    my ( $self, $user ) = @_;
+
+    eval {
+        $self->{schema}->txn_do(
+            sub {
+                my $saved_user =
+                  $self->{schema}->resultset('Document')
+                  ->find_or_create(
+                    { type => 'user', 'name' => $user->{id} } );
+                $saved_user->insert;
+
+                foreach my $key ( keys %{$user} ) {
+                    next if $key eq 'id';
+                    if ( $user->{$key} ) {
+                        my $prop =
+                          $self->{schema}->resultset('Property')
+                          ->find_or_create(
+                            {
+                                'property'    => $key,
+                                'value'       => $user->{$key},
+                                'document_id' => $saved_user->id,
+                            }
+                          );
+                        $prop->insert;
+                    }
+                }
+            }
+        );
+    };
+
+    if ($@) {
+
+        # i've got a problem
+    }
+    else {
+
         # okido
     }
 
