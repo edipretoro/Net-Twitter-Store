@@ -27,9 +27,9 @@ __PACKAGE__->add_columns(
 );
 
 __PACKAGE__->set_primary_key( 'id', 'type' );
-__PACKAGE__->has_many(
-    properties => 'Net::Twitter::Store::Schema::Result::Property',
-    'document_id'
-);
+# __PACKAGE__->has_many(
+#     properties => 'Net::Twitter::Store::Schema::Result::Property',
+#     'document_id'
+# );
 
 1;    # End of Net::Twitter::Store::Schema
