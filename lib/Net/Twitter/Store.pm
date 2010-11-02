@@ -37,7 +37,7 @@ sub new {
     my ( $class, %args ) = @_;
 
     my $self   = {};
-    my $schema = Net::Twitter::Store::Schema->connect( $args{dsn} );
+    my $schema = Net::Twitter::Store::Schema->connect( $args{dsn}, { AutoCommit => 1 } );
     $schema->deploy() if $args{deploy};
     $self->{schema} = $schema;
     bless $self, $class;
@@ -57,15 +57,22 @@ sub store {
                 my $saved_tweet =
                   $self->{schema}->resultset('Document')
                   ->find_or_create(
-                    { type => 'tweet', 'name' => $tweet->{id} } );
+                    { type => 'tweet', 'id' => $tweet->{id} } );
                 $saved_tweet->insert;
 
                 foreach my $key ( keys %{$tweet} ) {
                     next if $key eq 'id';
                     if ($key eq 'user') {
                         $self->_save_user( $tweet->{user} );
-                    }
-                    if ($tweet->{$key}) {
+                        my $prop =
+                            $self->{schema}->resultset('Property')->find_or_create(
+                                {
+                                    'property'    => $key,
+                                    'value'       => $tweet->{$key}{id},
+                                    'document_id' => $saved_tweet->id,
+                                }
+                            );
+                    } elsif ($tweet->{$key}) {
                         my $prop =
                             $self->{schema}->resultset('Property')->find_or_create(
                                 {
@@ -81,6 +88,8 @@ sub store {
         );
     };
 
+    $self->{schema}->txn_commit;
+
     if ($@) {
         # i've got a problem
     }
@@ -91,6 +100,7 @@ sub store {
 
 sub _save_user {
     my ( $self, $user ) = @_;
+    my $user_id = $user->{id};
 
     eval {
         $self->{schema}->txn_do(
@@ -98,7 +108,7 @@ sub _save_user {
                 my $saved_user =
                   $self->{schema}->resultset('Document')
                   ->find_or_create(
-                    { type => 'user', 'name' => $user->{id} } );
+                    { type => 'user', 'id' => $user->{id} } );
                 $saved_user->insert;
 
                 foreach my $key ( keys %{$user} ) {
@@ -128,7 +138,38 @@ sub _save_user {
 
         # okido
     }
+}
 
+sub last_tweet_id {
+    my $self = shift;
+
+    my $count_rs = $self->{schema}->resultset('Document')->search(
+        {
+            'type' => 'tweet',
+        },
+        {
+            '+select' => [ { max => 'id' } ],
+            '+as' => [ 'last_tweet_id' ],
+        }
+    );
+
+    return $count_rs->first->get_column('last_tweet_id');
+}
+
+sub tweets_total {
+    my $self = shift;
+
+    my $count_rs = $self->{schema}->resultset('Document')->search(
+        {
+            'type' => 'tweet',
+        },
+        {
+            '+select' => [ { count => '*' } ],
+            '+as' => [ 'tweets_total' ],
+        }
+    );
+
+    return $count_rs->first->get_column('tweets_total');
 }
 
 =head1 AUTHOR
