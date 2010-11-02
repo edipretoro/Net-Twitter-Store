@@ -36,7 +36,7 @@ __PACKAGE__->add_columns(
         'data_type'         => 'bigint',
         'is_auto_increment' => 0,
         'default_value'     => undef,
-        'is_foreign_key'    => 1,
+        'is_foreign_key'    => 0,
         'name'              => 'document_id',
         'is_nullable'       => 0,
         'size'              => '20'
@@ -44,9 +44,9 @@ __PACKAGE__->add_columns(
 );
 
 __PACKAGE__->set_primary_key('id');
-__PACKAGE__->belongs_to(
-    'document' => 'Net::Twitter::Store::Schema::Result::Document',
-    'id'
-);
+# __PACKAGE__->belongs_to(
+#     'document' => 'Net::Twitter::Store::Schema::Result::Document',
+#     'id'
+# );
 
 1;    # End of Net::Twitter::Store::Schema
